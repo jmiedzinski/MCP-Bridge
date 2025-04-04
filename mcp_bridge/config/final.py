@@ -1,4 +1,4 @@
-from typing import Annotated, Literal, Union
+from typing import Annotated, Literal, Union, Optional, List, Dict, Any
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import BaseModel, Field
 
@@ -41,6 +41,26 @@ class Sampling(BaseModel):
 class SSEMCPServer(BaseModel):
     # TODO: expand this once I find a good definition for this
     url: str = Field(description="URL of the MCP server")
+
+
+class MCPServerConfig(BaseModel):
+    """Configuration for an MCP server with additional MCP-Bridge specific attributes"""
+    
+    server: Union[StdioServerParameters, SSEMCPServer, DockerMCPServer] = Field(
+        ..., description="MCP server configuration"
+    )
+    
+    allowed_models: Optional[List[str]] = Field(
+        default=None, description="List of models allowed to use this MCP server"
+    )
+
+    disallowed_models: Optional[List[str]] = Field(
+        default=None, description="List of models disallowed from using this MCP server"
+    )
+
+    disabled: bool = Field(
+        default=False, description="Whether this server is disabled"
+    )
 
 
 MCPServer = Annotated[
@@ -90,8 +110,8 @@ class Settings(BaseSettings):
         description="Inference server configuration",
     )
 
-    mcp_servers: dict[str, MCPServer] = Field(
-        default_factory=dict, description="MCP servers configuration"
+    mcp_servers: dict[str, MCPServerConfig] = Field(
+        default_factory=dict, description="MCP servers configuration with optional metadata"
     )
 
     sampling: Sampling = Field(

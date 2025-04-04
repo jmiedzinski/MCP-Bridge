@@ -8,11 +8,59 @@ The config file is a json file that contains all the information needed to run t
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | inference_server | The inference server configuration. This should point to openai/vllm/ollama etc. Any OpenAI compatible base url should work.                                                   |
 | sampling         | Sampling model preferences. You must have at least one sampling model configured, and you can configure the same model with different intelligence, cost, and speed many times |
-| mcp_servers      | MCP server connection info/configuration. This is mostly the same as claude desktop but with some extra options.                                                               |
+| mcp_servers      | MCP server connection info/configuration. Each server should use the new structure with a `server` field containing the actual server configuration, plus metadata fields.     |
 | network          | uvicorn network configuration. Only used outside of docker environment                                                                                                         |
 | logging          | The logging configuration. Set to DEBUG for debug logging                                                                                                                      |
 
-Here is an example config.json file:
+## MCP Servers Configuration
+
+The `mcp_servers` section follows a new structure where each server configuration is split into:
+
+1. `server` - The actual server configuration (command/args, url, or image-based)
+2. Metadata fields:
+   - `allowed_models` - Optional list of models allowed to use this server
+   - `disallowed_models` - Optional list of models not allowed to use this server
+   - `disabled` - Optional flag to disable the server (default: false)
+
+### Server Configuration Types
+
+Depending on the server type, you need to provide different configuration inside the `server` field:
+
+1. **StdioServerParameters** (Command-based):
+   ```json
+   "server": {
+     "command": "uvx",
+     "args": ["mcp-server-fetch"],
+     "env": { "VAR1": "value1" }
+   }
+   ```
+
+2. **SSEMCPServer** (URL-based):
+   ```json
+   "server": {
+     "url": "http://localhost:8000/mcp-server/sse"
+   }
+   ```
+
+3. **DockerMCPServer** (Docker image-based):
+   ```json
+   "server": {
+     "image": "example-server:latest"
+   }
+   ```
+
+### Model Access Control
+
+You can control which models can use certain MCP servers:
+
+- If neither `allowed_models` nor `disallowed_models` is specified, all models can use the server.
+- If `allowed_models` is specified, only listed models can use the server.
+- If `disallowed_models` is specified, all models except those listed can use the server.
+- Specifying the same model in both `allowed_models` and `disallowed_models` will result in a configuration error.
+
+## Example Configuration
+
+Here is an example config.json file with the new structure:
 
 ```json
 {
@@ -39,16 +87,36 @@ Here is an example config.json file:
     },
     "mcp_servers": {
         "fetch": {
-            "command": "uvx",
-            "args": [
-                "mcp-server-fetch"
-            ]
+            "server": {
+                "command": "uvx",
+                "args": ["mcp-server-fetch"]
+            },
+            "allowed_models": ["gpt-4o", "gpt-4o-mini"]
         },
-        "sse-example-server": {
-            "url": "http://localhost:8000/mcp-server/sse"
+        "search": {
+            "server": {
+                "url": "http://localhost:8000/mcp-server/sse"
+            },
+            "allowed_models": ["gpt-4o"]
+        },
+        "code-review": {
+            "server": {
+                "command": "uvx",
+                "args": ["mcp-server-code-review"]
+            },
+            "disallowed_models": ["gpt-3.5-turbo"]
         },
         "docker-example-server": {
-            "image": "example-server:latest",
+            "server": {
+                "image": "example-server:latest"
+            }
+        },
+        "disabled-server": {
+            "server": {
+                "command": "uvx",
+                "args": ["mcp-server-disabled"]
+            },
+            "disabled": true
         }
     },
     "network": {
@@ -65,9 +133,9 @@ Here is an example config.json file:
 
 ### Docker
 
-when using docker you will need to add a reference to the config.json file in the `compose.yml` file. Pick any of
+When using docker you will need to add a reference to the config.json file in the `compose.yml` file. Pick any of:
 
-- add the `config.json` file to the same directory as the compose.yml file and use a volume mount (you will need to add the volume manually)
+- Add the `config.json` file to the same directory as the compose.yml file and use a volume mount (you will need to add the volume manually)
   ```bash
   environment:
     - MCP_BRIDGE__CONFIG__FILE=config.json # mount the config file for this to work
@@ -79,19 +147,48 @@ when using docker you will need to add a reference to the config.json file in th
       - ./config.json:/mcp_bridge/config.json
   ```
 
-- add a http url to the environment variables to download the config.json file from a url
+- Add a http url to the environment variables to download the config.json file from a url
   ```bash
   environment:
     - MCP_BRIDGE__CONFIG__HTTP_URL=http://10.88.100.170:8888/config.json
   ```
 
-- add the config json directly as an environment variable
+- Add the config json directly as an environment variable
   ```bash
   environment:
-    - MCP_BRIDGE__CONFIG__JSON={"inference_server":{"base_url":"http://example.com/v1","api_key":"None"},"mcp_servers":{"fetch":{"command":"uvx","args":["mcp-server-fetch"]}}}
+    - MCP_BRIDGE__CONFIG__JSON={"inference_server":{"base_url":"http://example.com/v1","api_key":"None"},"mcp_servers":{"fetch":{"server":{"command":"uvx","args":["mcp-server-fetch"]}}}}
   ```
 
 ### Non Docker
 
-For non docker, the system will look for a `config.json` file in the current directory. This means that there is no special configuration needed. You can still use the advanced loading mechanisms if you want to, but you will need to modify the environment variables for your system as in the docker section.
+For non-docker, the system will look for a `config.json` file in the current directory. This means that there is no special configuration needed. You can still use the advanced loading mechanisms if you want to, but you will need to modify the environment variables for your system as in the docker section.
 
+## Migrating from the Old Configuration Format
+
+If you're using the old format:
+
+```json
+"mcp_servers": {
+    "fetch": {
+        "command": "uvx",
+        "args": ["mcp-server-fetch"],
+        "allowed_models": ["gpt-4o", "gpt-4o-mini"]
+    }
+}
+```
+
+You need to move the server configuration into a nested `server` object:
+
+```json
+"mcp_servers": {
+    "fetch": {
+        "server": {
+            "command": "uvx",
+            "args": ["mcp-server-fetch"]
+        },
+        "allowed_models": ["gpt-4o", "gpt-4o-mini"]
+    }
+}
+```
+
+The metadata fields (`allowed_models`, `disallowed_models`, and `disabled`) remain at the server configuration level, not inside the `server` object.
