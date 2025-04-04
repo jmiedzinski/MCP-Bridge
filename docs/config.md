@@ -42,13 +42,22 @@ Here is an example config.json file:
             "command": "uvx",
             "args": [
                 "mcp-server-fetch"
-            ]
+            ],
+            "allowed_models": ["gpt-4o", "gpt-4o-mini"]
         },
-        "sse-example-server": {
-            "url": "http://localhost:8000/mcp-server/sse"
+        "search": {
+            "url": "http://localhost:8000/mcp-server/sse",
+            "allowed_models": ["gpt-4o"]
+        },
+        "code-review": {
+            "command": "uvx",
+            "args": [
+                "mcp-server-code-review"
+            ],
+            "disallowed_models": ["gpt-3.5-turbo"]
         },
         "docker-example-server": {
-            "image": "example-server:latest",
+            "image": "example-server:latest"
         }
     },
     "network": {
@@ -94,4 +103,3 @@ when using docker you will need to add a reference to the config.json file in th
 ### Non Docker
 
 For non docker, the system will look for a `config.json` file in the current directory. This means that there is no special configuration needed. You can still use the advanced loading mechanisms if you want to, but you will need to modify the environment variables for your system as in the docker section.
-

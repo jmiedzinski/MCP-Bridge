@@ -1,4 +1,4 @@
-from typing import Annotated, Literal, Union
+from typing import Annotated, Literal, Union, Optional, List, Dict, Any
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import BaseModel, Field
 
@@ -43,6 +43,25 @@ class SSEMCPServer(BaseModel):
     url: str = Field(description="URL of the MCP server")
 
 
+class MCPServerConfig(BaseModel):
+    """Configuration for an MCP server with additional MCP-Bridge specific attributes"""
+    
+    # Właściwa konfiguracja serwera MCP (jeden z trzech typów)
+    server: Union[StdioServerParameters, SSEMCPServer, DockerMCPServer] = Field(
+        ..., description="MCP server configuration"
+    )
+    
+    # Lista modeli, które mogą używać tego serwera MCP
+    allowed_models: Optional[List[str]] = Field(
+        default=None, description="List of models allowed to use this MCP server"
+    )
+
+    disallowed_models: Optional[List[str]] = Field(
+        default=None, description="List of models disallowed from using this MCP server"
+    )
+
+
+# Oryginalna definicja typów MCP serwerów
 MCPServer = Annotated[
     Union[StdioServerParameters, SSEMCPServer, DockerMCPServer],
     Field(description="MCP server configuration"),
@@ -90,8 +109,10 @@ class Settings(BaseSettings):
         description="Inference server configuration",
     )
 
-    mcp_servers: dict[str, MCPServer] = Field(
-        default_factory=dict, description="MCP servers configuration"
+    # Modyfikujemy definicję mcp_servers, by uwzględniać zarówno bezpośrednie konfiguracje
+    # jak i konfiguracje z dodatkowymi metadanymi
+    mcp_servers: Dict[str, Dict[str, Any]] = Field(
+        default_factory=dict, description="MCP servers configuration with optional metadata"
     )
 
     sampling: Sampling = Field(
