@@ -46,12 +46,10 @@ class SSEMCPServer(BaseModel):
 class MCPServerConfig(BaseModel):
     """Configuration for an MCP server with additional MCP-Bridge specific attributes"""
     
-    # Właściwa konfiguracja serwera MCP (jeden z trzech typów)
     server: Union[StdioServerParameters, SSEMCPServer, DockerMCPServer] = Field(
         ..., description="MCP server configuration"
     )
     
-    # Lista modeli, które mogą używać tego serwera MCP
     allowed_models: Optional[List[str]] = Field(
         default=None, description="List of models allowed to use this MCP server"
     )
@@ -60,8 +58,11 @@ class MCPServerConfig(BaseModel):
         default=None, description="List of models disallowed from using this MCP server"
     )
 
+    disabled: bool = Field(
+        default=False, description="Whether this server is disabled"
+    )
 
-# Oryginalna definicja typów MCP serwerów
+
 MCPServer = Annotated[
     Union[StdioServerParameters, SSEMCPServer, DockerMCPServer],
     Field(description="MCP server configuration"),
@@ -109,9 +110,7 @@ class Settings(BaseSettings):
         description="Inference server configuration",
     )
 
-    # Modyfikujemy definicję mcp_servers, by uwzględniać zarówno bezpośrednie konfiguracje
-    # jak i konfiguracje z dodatkowymi metadanymi
-    mcp_servers: Dict[str, Dict[str, Any]] = Field(
+    mcp_servers: dict[str, MCPServerConfig] = Field(
         default_factory=dict, description="MCP servers configuration with optional metadata"
     )
 

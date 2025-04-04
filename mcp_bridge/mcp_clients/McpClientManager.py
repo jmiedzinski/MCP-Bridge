@@ -16,22 +16,25 @@ class MCPClientManager:
     async def initialize(self):
         logger.log("DEBUG", "Initializing MCP Client Manager")
         for server_name, server_config in config.mcp_servers.items():
+            if server_config.disabled:
+                logger.log("DEBUG", f"Server {server_name} is disabled, skipping")
+                continue
             self.clients[server_name] = await self.construct_client(
                 server_name, server_config
             )
 
     async def construct_client(self, name, server_config) -> client_types:
         logger.log("DEBUG", f"Constructing client for {server_config}")
-        if isinstance(server_config, StdioServerParameters):
-            client = StdioClient(name, server_config)
+        if isinstance(server_config.server, StdioServerParameters):
+            client = StdioClient(name, server_config.server)
             await client.start()
             return client
-        if isinstance(server_config, SSEMCPServer):
-            client = SseClient(name, server_config)
+        if isinstance(server_config.server, SSEMCPServer):
+            client = SseClient(name, server_config.server)
             await client.start()
             return client
-        if isinstance(server_config, DockerMCPServer):
-            client = DockerClient(name, server_config)
+        if isinstance(server_config.server, DockerMCPServer):
+            client = DockerClient(name, server_config.server)
             await client.start()
             return client
         raise NotImplementedError("Client Type not supported")
@@ -46,8 +49,8 @@ class MCPClientManager:
         filtered_clients = []
         for name, client in self.clients.items():
             server_config = config.mcp_servers.get(name, {})
-            allowed_models = server_config.get("allowed_models")
-            disallowed_models = server_config.get("disallowed_models")
+            allowed_models = server_config.allowed_models
+            disallowed_models = server_config.disallowed_models
             
             # Check for model conflict - same model in both allowed and disallowed lists
             if (allowed_models is not None and disallowed_models is not None and 

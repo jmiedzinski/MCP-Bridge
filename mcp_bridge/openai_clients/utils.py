@@ -14,8 +14,8 @@ async def chat_completion_add_tools(request: CreateChatCompletionRequest):
     
     for name, session in ClientManager.get_clients():
         server_config = config.mcp_servers.get(name, {})
-        allowed_models = server_config.get("allowed_models")
-        disallowed_models = server_config.get("disallowed_models")
+        allowed_models = server_config.allowed_models
+        disallowed_models = server_config.disallowed_models
         
         # Check for model conflict - same model in both allowed and disallowed lists
         if (allowed_models is not None and disallowed_models is not None and 
@@ -59,8 +59,8 @@ async def call_tool(
         
     if model_name is not None:
         server_config = config.mcp_servers.get(session.name, {})
-        allowed_models = server_config.get("allowed_models")
-        disallowed_models = server_config.get("disallowed_models")
+        allowed_models = server_config.allowed_models
+        disallowed_models = server_config.disallowed_models
         
         # Check for model conflict - same model in both allowed and disallowed lists
         if (allowed_models is not None and disallowed_models is not None and 
