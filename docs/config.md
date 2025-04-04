@@ -49,14 +49,20 @@ Depending on the server type, you need to provide different configuration inside
    }
    ```
 
-### Model Access Control
+### Model and Tool Access Control
 
-You can control which models can use certain MCP servers:
+You can control which models can use certain MCP servers and which tools are available:
 
 - If neither `allowed_models` nor `disallowed_models` is specified, all models can use the server.
 - If `allowed_models` is specified, only listed models can use the server.
 - If `disallowed_models` is specified, all models except those listed can use the server.
-- Specifying the same model in both `allowed_models` and `disallowed_models` will result in a configuration error.
+
+Similarly for tools:
+- If neither `allowed_tools` nor `disallowed_tools` is specified, all tools from the server are available.
+- If `allowed_tools` is specified, only listed tools from the server are available.
+- If `disallowed_tools` is specified, all tools except those listed are available.
+
+Specifying the same model in both `allowed_models` and `disallowed_models` or the same tool in both `allowed_tools` and `disallowed_tools` will result in a configuration error.
 
 ## Example Configuration
 
