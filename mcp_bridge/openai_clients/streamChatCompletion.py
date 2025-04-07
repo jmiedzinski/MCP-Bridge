@@ -1,5 +1,6 @@
 import json
 from typing import Optional
+import uuid
 from fastapi import HTTPException, Request
 from lmos_openai_types import (
     ChatCompletionMessageToolCall,
@@ -110,6 +111,8 @@ async def chat_completions(request: CreateChatCompletionRequest, http_request: R
                         call_id = parsed_data.choices[0].delta.tool_calls[0].id
                         call_id = call_id if call_id is not None else ""
                         tool_call_id = id if tool_call_id == "" else tool_call_id
+                        if not tool_call_id:
+                            tool_call_id = uuid.uuid4().hex[:16]
                         arg = parsed_data.choices[0].delta.tool_calls[0].function.arguments
                         tool_call_json += arg if arg is not None else ""
                         

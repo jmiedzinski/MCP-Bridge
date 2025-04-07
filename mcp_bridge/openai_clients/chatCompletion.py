@@ -1,3 +1,4 @@
+import uuid
 from fastapi import Request
 from lmos_openai_types import (
     CreateChatCompletionRequest,
@@ -76,12 +77,14 @@ async def chat_completions(
                     {"type": "text", "text": "the tool call result is empty"}
                 ]
                 
+            tool_call_id = tool_call.id if tool_call.id and tool_call.id.strip() else uuid.uuid4().hex[:16]
+            
             request.messages.append(
                 ChatCompletionRequestMessage.model_validate(
                     {
                         "role": "tool",
                         "content": tools_content,
-                        "tool_call_id": tool_call.id,
+                        "tool_call_id": tool_call_id,
                     }
                 )
             )
