@@ -58,6 +58,13 @@ class MCPServerConfig(BaseModel):
         default=None, description="List of models disallowed from using this MCP server"
     )
 
+    allowed_tools: Optional[List[str]] = Field(
+        default=None, description="List of tools allowed to be used from this MCP server"
+    )
+    disallowed_tools: Optional[List[str]] = Field(
+        default=None, description="List of tools disallowed from being used from this MCP server"
+    )
+
     disabled: bool = Field(
         default=False, description="Whether this server is disabled"
     )
