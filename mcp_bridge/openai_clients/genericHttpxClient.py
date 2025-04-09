@@ -4,7 +4,7 @@ from fastapi import Request
 from contextlib import asynccontextmanager
 
 async def create_client(request: Request = None):
-    """Tworzy nową instancję klienta z odpowiednimi nagłówkami"""
+    """Creates a new client instance with the appropriate headers"""
     client = AsyncClient(
         base_url=config.inference_server.base_url,
         headers={
@@ -33,7 +33,7 @@ async def create_client(request: Request = None):
 
 @asynccontextmanager
 async def get_client(request: Request = None):
-    """Context manager dla klienta HTTP"""
+    """Context manager for HTTP client"""
     client = await create_client(request)
     try:
         yield client
